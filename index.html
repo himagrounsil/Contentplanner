@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-info">
+                    <h1>Content Planner</h1>
+                    <p>Kelola semua task Anda di satu tempat</p>
+                </div>
+                <div class="header-actions">
+                    <div class="header-logos" aria-label="Partner logos">
+                        <img src="Logo\LOGO-UNSIL.png" alt="Logo 1" class="logo-sm" />
+                        <img src="Logo\Logo-HIMAGRO.png" alt="Logo 2" class="logo-sm" />
+                        <img src="Logo\Logo-CitaSaswahita Tanpa BG.png" alt="Logo 3" class="logo-sm" />
+                    </div>
+                    <button class="btn btn-secondary" id="toggleThemeBtn" title="Toggle theme" aria-label="Toggle theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn btn-primary" onclick="openAddTaskModal()">
+                        <i class="fas fa-plus"></i>
+                        Tambah Task
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Tasks</p>
+                        <p class="stat-value" id="totalTasks">0</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">On Time</p>
+                        <p class="stat-value" id="onTimeTasks">0</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Deadline Dekat</p>
+                        <p class="stat-value" id="nearDeadlineTasks">0</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="stat-info">
+                        <p class="stat-label">Overdue</p>
+                        <p class="stat-value" id="overdueTasks">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks Table -->
+            <div class="tasks-container">
+                <div class="tasks-header">
+                    <h2>Daftar Tasks</h2>
+                    <button class="btn btn-secondary" onclick="refreshTasks()">
+                        <i class="fas fa-sync-alt"></i>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="search-filter-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cari task..." onkeyup="handleSearch()">
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <select id="platformFilter" onchange="applyFilters()">
+                            <option value="">Semua Platform</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Tiktok">Tiktok</option>
+                            <option value="Youtube">Youtube</option>
+                        </select>
+                        
+                        <select id="formatFilter" onchange="applyFilters()">
+                            <option value="">Semua Format</option>
+                            <option value="Feeds">Feeds</option>
+                            <option value="Feeds (Grid)">Feeds (Grid)</option>
+                            <option value="Corrusel">Corrusel</option>
+                            <option value="Story">Story</option>
+                            <option value="Video">Video</option>
+                            <option value="Article">Article</option>
+                        </select>
+                        
+                        <select id="assignedToFilter" onchange="applyFilters()">
+                            <option value="">Semua Assignee</option>
+                            <option value="Design Creator">Design Creator</option>
+                            <option value="Room Of Documentary">Room Of Documentary</option>
+                            <option value="Relation And Archive">Relation And Archive</option>
+                            <option value="Jurnalism">Jurnalism</option>
+                            <option value="Social Media">Social Media</option>
+                        </select>
+                        
+                        <select id="progressFilter" onchange="applyFilters()">
+                            <option value="">Semua Progress</option>
+                            <option value="Not Done">Not Done</option>
+                            <option value="On Progress">On Progress</option>
+                            <option value="Ready To Upload">Ready To Upload</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        
+                        <select id="sortBy" onchange="applySorting()">
+                            <option value="no">Sortir: No</option>
+                            <option value="task">Sortir: Task</option>
+                            <option value="dueDate">Sortir: Due Date</option>
+                            <option value="inProgress">Sortir: Progress</option>
+                            <option value="platform">Sortir: Platform</option>
+                        </select>
+                        
+                        <select id="sortOrder" onchange="applySorting()">
+                            <option value="asc">A-Z / 1-9</option>
+                            <option value="desc">Z-A / 9-1</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="loadingState" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Memuat data...</p>
+                </div>
+
+                <!-- Error State -->
+                <div id="errorState" class="error-state" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p id="errorMessage">Gagal memuat data</p>
+                    <button class="btn btn-primary" onclick="refreshTasks()">Coba Lagi</button>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="empty-state" style="display: none;">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>Belum ada task</h3>
+                    <p>Klik tombol "Tambah Task" untuk menambahkan task pertama Anda</p>
+                </div>
+
+                <!-- Desktop Table -->
+                <div id="desktopTable" class="table-container">
+                    <table class="tasks-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Task</th>
+                                <th>Platform</th>
+                                <th>Format</th>
+                                <th>Assigned To</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            <!-- Tasks will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div id="mobileCards" class="mobile-cards">
+                    <!-- Mobile cards will be populated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Task Modal -->
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Tambah Task Baru</h2>
+                <button class="modal-close" onclick="closeAddTaskModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="addTaskForm" class="modal-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="taskInput">
+                            <i class="fas fa-file-text"></i>
+                            Task <span class="required">*</span>
+                        </label>
+                        <textarea id="taskInput" name="task" required placeholder="Masukkan deskripsi task..."></textarea>
+                        <span class="error-message" id="taskError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Platform</label>
+                        <div id="platformMs" class="multi-select"></div>
+                        <input type="hidden" id="platformInput" name="platform" />
+                        <span class="error-message" id="platformError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Format</label>
+                        <div id="formatMs" class="multi-select"></div>
+                        <input type="hidden" id="formatInput" name="format" />
+                        <span class="error-message" id="formatError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-user"></i>
+                            Assigned To <span class="required">*</span>
+                        </label>
+                        <div id="assignedToMs" class="multi-select"></div>
+                        <input type="hidden" id="assignedToInput" name="assignedTo" />
+                        <span class="error-message" id="assignedToError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dueDateInput">
+                            <i class="fas fa-calendar"></i>
+                            Due Date <span class="required">*</span>
+                        </label>
+                        <input type="date" id="dueDateInput" name="dueDate" required>
+                        <span class="error-message" id="dueDateError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="inProgressInput">
+                            <i class="fas fa-check-circle"></i>
+                            Progress <span class="required">*</span>
+                        </label>
+                        <select id="inProgressInput" name="inProgress" required>
+                            <option value="Not Done">Not Done</option>
+                            <option value="On Progress">On Progress</option>
+                            <option value="Ready To Upload">Ready To Upload</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        <span class="error-message" id="inProgressError"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="referenceInput">
+                            <i class="fas fa-link"></i>
+                            Reference
+                        </label>
+                        <input type="url" id="referenceInput" name="reference" placeholder="https://example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resultInput">Result</label>
+                        <textarea id="resultInput" name="result" placeholder="Hasil atau output dari task..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="notesInput">
+                        <i class="fas fa-comment"></i>
+                        Notes
+                    </label>
+                    <textarea id="notesInput" name="notes" placeholder="Catatan tambahan..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddTaskModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Simpan Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Task Detail Modal -->
+    <div id="taskDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="taskDetailTitle">Detail Task</h2>
+                <button class="modal-close" onclick="closeTaskDetailModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="task-detail-grid">
+                    <div class="detail-group">
+                        <label>
+                            <i class="fas fa-file-text"></i>
+                            Task
+                        </label>
+                        <div class="detail-content" id="detailTask"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>Platform</label>
+                        <div class="detail-content" id="detailPlatform"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>Format</label>
+                        <div class="detail-content" id="detailFormat"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>
+                            <i class="fas fa-user"></i>
+                            Assigned To
+                        </label>
+                        <div class="detail-content" id="detailAssignedTo"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>
+                            <i class="fas fa-calendar"></i>
+                            Date
+                        </label>
+                        <div class="detail-content" id="detailDueDate"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>Due Date</label>
+                        <div class="detail-content">
+                            <span id="detailStatus" class="status-badge"></span>
+                        </div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>
+                            <i class="fas fa-check-circle"></i>
+                            Progress
+                        </label>
+                        <div class="detail-content" id="detailInProgress"></div>
+                    </div>
+
+                    <div class="detail-group">
+                        <label>
+                            <i class="fas fa-link"></i>
+                            Reference
+                        </label>
+                        <div class="detail-content" id="detailReference"></div>
+                    </div>
+                </div>
+
+                <div class="detail-group full-width">
+                    <label>Result</label>
+                    <div class="detail-content" id="detailResult"></div>
+                </div>
+
+                <div class="detail-group full-width">
+                    <label>
+                        <i class="fas fa-comment"></i>
+                        Notes
+                    </label>
+                    <div class="detail-content" id="detailNotes"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="deleteTask()">
+                    <i class="fas fa-trash"></i>
+                    Hapus Task
+                </button>
+                <button class="btn btn-primary" onclick="openEditTaskModal()">
+                    <i class="fas fa-edit"></i>
+                    Edit Task
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scroll To Top Button -->
+    <button id="scrollTopBtn" title="Kembali ke atas" class="scroll-top-btn" aria-label="Kembali ke atas">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- Global Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" aria-hidden="true">
+        <div class="loading-overlay-content">
+            <div class="spinner"></div>
+            <p>Memuat data...</p>
+        </div>
+    </div>
+
+    <!-- Full Screen Loading Overlay -->
+    <div id="fullScreenLoading" class="full-screen-loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Memuat data...</p>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div id="editTaskModal" class="modal" aria-hidden="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 class="text-xl font-semibold">Edit Task</h2>
+                    <p class="text-sm">Perbarui data task yang dipilih</p>
+                </div>
+                <button class="modal-close" onclick="closeEditTaskModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="editTaskForm" class="modal-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-file-text"></i>
+                            Task <span class="required">*</span>
+                        </label>
+                        <textarea id="taskInputEdit" name="task" required placeholder="Masukkan deskripsi task..."></textarea>
+                        <span class="error-message" id="taskErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Platform</label>
+                        <div id="platformMsEdit" class="multi-select"></div>
+                        <input type="hidden" id="platformInputEdit" name="platform" />
+                        <span class="error-message" id="platformErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Format</label>
+                        <div id="formatMsEdit" class="multi-select"></div>
+                        <input type="hidden" id="formatInputEdit" name="format" />
+                        <span class="error-message" id="formatErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-user"></i>
+                            Assigned To <span class="required">*</span>
+                        </label>
+                        <div id="assignedToMsEdit" class="multi-select"></div>
+                        <input type="hidden" id="assignedToInputEdit" name="assignedTo" />
+                        <span class="error-message" id="assignedToErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-calendar"></i>
+                            Date <span class="required">*</span>
+                        </label>
+                        <input type="date" id="dueDateInputEdit" name="dueDate" required>
+                        <span class="error-message" id="dueDateErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-check-circle"></i>
+                            Progress <span class="required">*</span>
+                        </label>
+                        <select id="inProgressInputEdit" name="inProgress" required>
+                            <option value="Not Done">Not Done</option>
+                            <option value="On Progress">On Progress</option>
+                            <option value="Ready To Upload">Ready To Upload</option>
+                            <option value="Done">Done</option>
+                        </select>
+                        <span class="error-message" id="inProgressErrorEdit"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-link"></i>
+                            Reference
+                        </label>
+                        <input type="url" id="referenceInputEdit" name="reference" placeholder="https://example.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Result</label>
+                        <textarea id="resultInputEdit" name="result" placeholder="Hasil atau output dari task..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>
+                        <i class="fas fa-comment"></i>
+                        Notes
+                    </label>
+                    <textarea id="notesInputEdit" name="notes" placeholder="Catatan tambahan..."></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditTaskModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
